@@ -7,8 +7,9 @@ paths = ['Traning\\CP\\46_N_22_E.xml','Traning\\RFC\\Amazon.xml']
 list_pos_token = []
 list_tag_values = []
 
-
-
+def concatenate_dicts(d0,d1):
+    result = {key: value + d1.get(key,[]) for key, value in d0.items()}
+    return result
 #For every file, extract the information
 for path in paths:
     #Load xml tree
