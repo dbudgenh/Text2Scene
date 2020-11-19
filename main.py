@@ -1,67 +1,126 @@
-import xml.etree.ElementTree as ET
+import matplotlib.pyplot as plt
+from XMLDocument import XMLDocument
+from functools import reduce
+from utils import concatenate_dicts
+import numpy as np
 import os
-import spacy
+from tqdm import tqdm
+import sys
+from datetime import date
 
-#path = 'Traning\\CP\\46_N_22_E.xml'
-paths = ['Traning\\CP\\46_N_22_E.xml','Traning\\RFC\\Amazon.xml']
-list_pos_token = []
-list_tag_values = []
+#Aufgabe 2.2+2.3
+def main():
+    #Set to true to log all the output.
+    #Open the file Log_2020-11-19.txt to see the result
+    log_to_file = False
+    if log_to_file:
+        sys.stdout = open(f'Log_{date.today()}.txt','w')
+    #Enter the paths to the xml documents.
+    #aths = ['Traning\\CP\\46_N_22_E.xml']
 
-def concatenate_dicts(d0,d1):
-    result = {key: value + d1.get(key,[]) for key, value in d0.items()}
-    return result
-#For every file, extract the information
-for path in paths:
-    #Load xml tree
-    tree = ET.parse(path)
-    #Get the root of xml file (<SpaceEvalTaskv1.2>)
-    root = tree.getroot()
-    #This contains the actual data (<TEXT>)
-    text = root[0]
+    paths = []
+    for root, dirs, files in os.walk("Traning\\"):
+        for name in files:
+            if name.endswith('.xml'):
+                paths.append(os.path.join(root, name))
 
-    #Contains the tags
-    tags = root[1]
-    #Store the data
-    cdata = text.text
+    #For every document, store the information in a list
+    complete_PoS = [] #PoS:[Token] [{'NOUN':['David'],'VERB':['attack','do']},{'NOUN':['Leo']}]
+    complete_tags = [] #Tag:{attrib:value}
+    complete_sentences = [] #[Words]
+    complete_sentences_length = [] #[length of sentence]
 
-    #Load nlp model
-    nlp = spacy.load("en_core_web_sm")
-    #Analyze the data with our nlp model
-    doc = nlp(cdata)
+    for path in tqdm(paths):
+        #Load the xml file
+        xml_doc = XMLDocument(path)
+        #Get the PoS
+        pos_dict = xml_doc.extract_PoS()
+        #Get the tags
+        tags_dict = xml_doc.extract_tags()
+        #Get all the sentences
+        sentences = xml_doc.extract_sentences()
+        #Get the length of all sentences
+        sentences_length = xml_doc.extract_sentences_length()
 
-    #For every PoS tag, a list of values will be saved
-    token_pos = {}
-
-    #key -> PoS-tag, value -> list of tokens
-    for token in doc:
-        token_pos.setdefault(token.pos_,[]).append(token.text)
-    #key -> tag, value -> dict of attributes
-    tag_values = {}
-    for child in tags:
-        tag_values.setdefault(child.tag,[]).append(child.attrib)
-
-
-    sentences = [sent.string.strip() for sent in doc.sents]
-    sentence_length = [len(sentence.split()) for sentence in sentences]
-
+        #For every xml file, add them to the list
+        complete_PoS.append(pos_dict)
+        complete_tags.append(tags_dict)
+        complete_sentences.append(sentences)
+        complete_sentences_length.append(sentences_length)
     #Aufgabe 2.3.1
-    for key in token_pos:
-        print(f"Der PoS {key} enthält {len(token_pos[key])} Einträge")
+    print("# Aufgabe 2.3.1")
+    complete_dict_pos = reduce(lambda x,y: concatenate_dicts(x,y),complete_PoS)
+    for key in complete_dict_pos:
+        print(f"Der PoS {key} kommt {len(complete_dict_pos[key])} Mal vor")
     print("-----------------------------------------------------------------")
 
     #Aufgabe 2.3.2
-    for tag in tag_values:
-        print(f"Der tag {tag} enthält {len(tag_values[tag])} Einträge")
+    print("# Aufgabe 2.3.2")
+    complete_dict_tags = reduce(lambda x,y: concatenate_dicts(x,y),complete_tags)
+    for tag in complete_dict_tags:
+        print(f"{tag} kommt {len(complete_dict_tags[tag])} Mal vor")
     print("-----------------------------------------------------------------")
 
     #Aufgabe 2.3.3
-    qslink_occurence = {}
-    for qslink in tag_values['QSLINK']:
-        qslink_occurence.setdefault(qslink['relType'],[]).append(1)
+    print("# Aufgabe 2.3.3")
+    qslink_dict = {} #dict for every qlink type
+    for qslink in complete_dict_tags['QSLINK']:
+        qslink_dict.setdefault(qslink['relType'],[]).append(1)
 
-    for qslink in qslink_occurence:
-        print(f"Der QSLINK {qslink} kommt {len(qslink_occurence[qslink])} mal vor")
-    print("-----------------------------------------------------------------")
+    #print every qlink, and their occurences
+    for qslink_type in qslink_dict:
+        print(f"Der QSLINK {qslink_type} kommt {len(qslink_dict[qslink_type])} Mal vor")
 
     #Aufgabe 2.3.4
-    print(sentence_length)
+    print("# Aufgabe 2.3.4")
+    #Flatten 2d list to 1d (could also use numpy..)
+    complete_list_sentence_length = reduce(lambda x,y: x+y,complete_sentences_length)
+
+    plt.figure(figsize=(15,10)) 
+    plt.hist(complete_list_sentence_length,bins=np.arange(0,max(complete_list_sentence_length))-0.5)
+    plt.xticks(range(0,max(complete_list_sentence_length)+1))
+    plt.yticks(range(0,max(np.bincount(complete_list_sentence_length)+1)))
+    plt.title('Satzlänge und deren Häufigkeit')
+    plt.ylabel('Häufigkeit')
+    plt.xlabel('Satzlänge (in Wörter)')
+    plt.tight_layout()
+    plt.savefig("output.png")
+    plt.show()
+    print("-----------------------------------------------------------------")
+
+    #Aufgabe 2.3.5
+    print("# Aufgabe 2.3.5")
+    #create a list of tuples for each qslink,trigger pair
+    qslink_trigger_pairs = []
+    for qslink in complete_dict_tags['QSLINK']:
+        qslink_trigger_pairs.append((qslink['id'],qslink['trigger']))
+
+    #create a list of tuples for each oslink,trigger pair
+    olink_trigger_pairs = []
+    for olink in complete_dict_tags['OLINK']:
+        olink_trigger_pairs.append((olink['id'],olink['trigger']))
+
+    #Print out qslink pairs
+    for pair in qslink_trigger_pairs:
+        print(f"QSLINK mit id {pair[0]} wurde durch id {pair[1]} getriggert")
+    print("-----------------------------------------------------------------")
+
+    #Print out olink pairs
+    for pair in olink_trigger_pairs:
+        print(f"OLINK mit id {pair[0]} wurde durch id {pair[1]} getriggert")
+    print("-----------------------------------------------------------------")
+
+    #Aufgabe 2.3.6
+    print("# Aufgabe 2.3.6")
+    motion_dict = {}
+    for motion in complete_dict_tags['MOTION']:
+        motion_dict.setdefault(motion['motion_class'],[]).append(1)
+    #sort ascending by most occured verb
+    sorted_motion_list = sorted(motion_dict.items(), key = lambda e: len(e[1]))
+
+    #Read the top 5 verbs and their occurence
+    for pair in list(reversed(sorted_motion_list))[:5]:
+        print(f"Das Movement-Verb {pair[0]} kommt genau {len(pair[1])} Mal vor.")
+
+if __name__ == "__main__":
+    main()
