@@ -3,16 +3,32 @@ from XMLDocument import XMLDocument
 from functools import reduce
 from utils import concatenate_dicts
 import numpy as np
+import os
+from tqdm import tqdm
+import sys
+from datetime import date
 
+
+#Set to true to log all the output.
+#Open the file Log_2020-11-19.txt to see the result
+log_to_file = True
+if log_to_file:
+    sys.stdout = open(f'Log_{date.today()}.txt','w')
 #Enter the paths to the xml documents.
-paths = ['Traning\\CP\\46_N_22_E.xml','Traning\\RFC\\Honduras.xml']
+#paths = ['Traning\\CP\\46_N_22_E.xml','Traning\\RFC\\Honduras.xml']
+paths = []
+for root, dirs, files in os.walk("Traning\\"):
+    for name in files:
+        if name.endswith('.xml'):
+            paths.append(os.path.join(root, name))
+
 #For every document, store the information in a list
 complete_PoS = [] #PoS:[Token] [{'NOUN':['David'],'VERB':['attack','do']},{'NOUN':['Leo']}]
 complete_tags = [] #Tag:{attrib:value}
 complete_sentences = [] #[Words]
 complete_sentences_length = [] #[length of sentence]
 
-for path in paths:
+for path in tqdm(paths):
     #Load the xml file
     xml_doc = XMLDocument(path)
     #Get the PoS
@@ -29,7 +45,8 @@ for path in paths:
     complete_tags.append(tags_dict)
     complete_sentences.append(sentences)
     complete_sentences_length.append(sentences_length)
-    
+
+print("Done parsing xml files")
 
 #Aufgabe 2.3.1
 complete_dict_pos = reduce(lambda x,y: concatenate_dicts(x,y),complete_PoS)
