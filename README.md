@@ -1,5 +1,4 @@
 # Aufgabe 1
-
 Die Datenschutz relevanten Daten liegen im Ordner Datenschutz/
 
 # Aufgabe 2.1,2.2,2.3
@@ -9,5 +8,6 @@ Man kann sich die Ergebnisse auch in der output.pdf Datei anschauen (Graph ist a
 
 
 # Aufgabe 2.4
-
 Die Aufgabe 2.4 ist Aufgabe2_4.py. Einfach ausführen.
+
+Du kannst enterweder die Log_2020-11-19.pdf öffnen, oder die Aufgaben einzeln ausführen.

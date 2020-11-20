@@ -2,6 +2,8 @@ from XMLDocument import XMLDocument
 import networkx as nx
 import matplotlib.pyplot as plt
 
+
+#Open Log_2020-11-19.pdf to see the output of all exercises.
 def main():
     paths = ['Traning\\RFC\\Bicycles.xml','Traning\\ANC\\WhereToMadrid\\Highlights_of_the_Prado_Museum.xml']
     file_name = ['Bicycles.png','Highlights_of_the_Prado_Museum.png']
