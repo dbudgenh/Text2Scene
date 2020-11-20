@@ -93,12 +93,14 @@ def main():
     #create a list of tuples for each qslink,trigger pair
     qslink_trigger_pairs = []
     for qslink in complete_dict_tags['QSLINK']:
-        qslink_trigger_pairs.append((qslink['id'],qslink['trigger']))
+        if qslink['trigger'] != "":
+            qslink_trigger_pairs.append((qslink['id'],qslink['trigger']))
 
     #create a list of tuples for each oslink,trigger pair
     olink_trigger_pairs = []
     for olink in complete_dict_tags['OLINK']:
-        olink_trigger_pairs.append((olink['id'],olink['trigger']))
+        if olink['trigger'] != "":
+            olink_trigger_pairs.append((olink['id'],olink['trigger']))
 
     #Print out qslink pairs
     for pair in qslink_trigger_pairs:
